@@ -1,0 +1,183 @@
+We need to prove the Osterwalder-Schrader axioms.  so, we could do the lattice which makes reflection positivity provable and take the zero lattice spacing limit, and we could do smoothing in R^d which makes Euclidean invariance provable, and remove the smoothing.  can we do construction (C) of the GFF on Z^d and then show that its zero lattice spacing limit and the limit of removing the smoothing produce the same measure?
+
+Yes—if you keep a **mass $m>0$** (so there is no IR problem), the two natural approximations
+
+* **(Lattice)**: discrete GFF on $a\mathbb Z^d$ with covariance $\big(-\Delta_a+m^2\big)^{-1}$ and suitable continuum extension; and
+* **(Smoothing)**: continuum massive GFF with covariance $\big(-\Delta+m^2\big)^{-1}$, mollified by an approximate identity and then “unsmoothed”,
+
+both converge (in the sense of probability measures on distributions) to the **same** Gaussian measure $\mu_m$ with covariance $(-\Delta+m^2)^{-1}$. Once you know that, the Osterwalder–Schrader (OS) axioms for $\mu_m$ follow in the standard way, and—importantly—**reflection positivity and Euclidean invariance survive the limits**.
+
+Below is a self‑contained blueprint that you can drop into notes or a formalization plan.
+
+---
+
+## Set‑up and the two approximations
+
+Fix $d\ge1$ and $m>0$.
+
+### 1) Continuum target (the massive free field)
+
+Let $\mu_m$ be the centered Gaussian measure on $\mathcal S'(\mathbb R^d)$ with characteristic functional
+
+$$
+\widehat\mu_m(f)
+\;=\;\exp\!\Big(-\tfrac12\,\langle f,\,G_m f\rangle\Big),
+\qquad f\in\mathcal S(\mathbb R^d),
+$$
+
+where $G_m := (-\Delta+m^2)^{-1}$ (in Fourier space: $\widehat{G_m}(k)=(|k|^2+m^2)^{-1}$).
+
+This exists (and is Radon on, e.g., $H^{-s}$ for any $s>\tfrac d2-1$) by Minlos/AWS, but we won’t need that machinery if we argue at the level of characteristic functionals.
+
+### 2) Lattice approximation (zero lattice spacing)
+
+For $a>0$, write $\Delta_a$ for the standard nearest‑neighbor discrete Laplacian on $a\mathbb Z^d$:
+
+$$
+(\Delta_a u)(x)=\frac1{a^2}\sum_{i=1}^d\big(u(x+ae_i)-2u(x)+u(x-ae_i)\big).
+$$
+
+Let $\mu_a$ be the centered Gaussian measure on configurations $\phi:a\mathbb Z^d\to\mathbb R$ with covariance $\big(-\Delta_a+m^2\big)^{-1}$.
+
+Embed $\phi$ into $\mathcal S'(\mathbb R^d)$ by the piecewise‑constant (or finite‑element “hat‑function”) extension $E_a$ and the continuum pairing
+
+$$
+\langle E_a\phi,\,f\rangle
+:= a^d\sum_{x\in a\mathbb Z^d}\phi(x)\,f(x)\qquad(f\in\mathcal S).
+$$
+
+Denote by $\bar\mu_a$ the law of $E_a\phi$ on $\mathcal S'$.
+
+### 3) Smoothing approximation (remove the mollifier)
+
+Fix a standard mollifier $\rho\in\mathcal S$ with $\int\rho=1$, set $\rho_\varepsilon(x)=\varepsilon^{-d}\rho(x/\varepsilon)$.
+Let $\mu_\varepsilon$ be the centered Gaussian on $\mathcal S'$ with covariance
+
+$$
+G_\varepsilon := G_m * (\rho_\varepsilon * \tilde\rho_\varepsilon) * G_m,
+\quad\text{ i.e. }\quad
+\widehat G_\varepsilon(k)=\frac{|\widehat\rho(\varepsilon k)|^2}{|k|^2+m^2}.
+$$
+
+Equivalently, $\mu_\varepsilon$ is the law of $G_m * \xi_\varepsilon$ where $\xi_\varepsilon:=\rho_\varepsilon*\xi$ and $\xi$ is space white noise.
+
+---
+
+## Convergence of both schemes to the same limit
+
+Everything reduces to **convergence of covariances against test functions** and a standard tightness/equicontinuity argument for Gaussians on $\mathcal S'$.
+
+### A) Lattice $\Rightarrow$ continuum
+
+For $f\in\mathcal S$,
+
+$$
+\operatorname{Var}_{\bar\mu_a}\big(\langle \cdot, f\rangle\big)
+= \big\langle R_a f,\; (-\Delta_a+m^2)^{-1}\,R_a f\big\rangle_{\ell^2(a\mathbb Z^d; a^d)}
+= \big\langle f,\; T_a f\big\rangle_{L^2},
+$$
+
+where $R_a f$ is sampling $f$ on $a\mathbb Z^d$ (with weight $a^d$), and
+
+$$
+T_a := E_a\,(-\Delta_a+m^2)^{-1} R_a : L^2(\mathbb R^d)\to L^2(\mathbb R^d).
+$$
+
+* **Fourier-symbol argument.** The discrete Fourier symbol of $-\Delta_a$ is
+
+  $$
+  \widehat{(-\Delta_a)}(k)=\frac{2}{a^2}\sum_{i=1}^d (1-\cos(a k_i)),
+  \quad k\in [-\pi/a,\pi/a]^d.
+  $$
+
+  Hence
+
+  $$
+  \widehat{T_a f}(k) \approx \frac{\widehat f(k)}{m^2+\frac{2}{a^2}\sum_i(1-\cos(a k_i))}
+  \ \ \stackrel{a\downarrow0}{\longrightarrow}\ \
+  \frac{\widehat f(k)}{m^2+|k|^2}
+  $$
+
+  with dominated convergence (the denominator is $\gtrsim m^2$ and the domain grows to $\mathbb R^d$). Therefore
+  $\langle f, T_a f\rangle \to \langle f, G_m f\rangle$.
+
+* **Alternative (variational) argument.** With $E_a$ chosen as the standard finite‑element extension, the resolvents $T_a$ converge **strongly** to $G_m$ on $L^2$ (convergence of consistent, stable finite‑difference/finite‑element resolvents). Then $\langle f, T_a f\rangle\to\langle f, G_m f\rangle$ for all $f$.
+
+Thus the lattice characteristic functionals
+$\widehat{\bar\mu_a}(f)=\exp(-\tfrac12\langle f,T_a f\rangle)$
+**converge pointwise** to $\widehat\mu_m(f)$.
+
+### B) Mollified continuum $\Rightarrow$ continuum
+
+For $f\in\mathcal S$,
+
+$$
+\operatorname{Var}_{\mu_\varepsilon}\big(\langle \cdot, f\rangle\big)
+= \int_{\mathbb R^d}\frac{|\widehat\rho(\varepsilon k)|^2}{|k|^2+m^2}\,|\widehat f(k)|^2\,\frac{dk}{(2\pi)^d}
+\ \xrightarrow{\ \varepsilon\downarrow0\ }\ 
+\int_{\mathbb R^d}\frac{|\widehat f(k)|^2}{|k|^2+m^2}\,\frac{dk}{(2\pi)^d},
+$$
+
+again by dominated convergence (bounded by $(|k|^2+m^2)^{-1}|\widehat f|^2\in L^1$).
+
+Therefore the characteristic functionals $\widehat{\mu_\varepsilon}$ converge pointwise to $\widehat\mu_m$.
+
+### C) Tightness and convergence of measures on $\mathcal S'$
+
+For centered Gaussians on a **nuclear** space dual like $\mathcal S'$, pointwise convergence of characteristic functionals plus equicontinuity at $0$ gives weak convergence (Lévy continuity in nuclear spaces / Sazonov’s theorem). Equicontinuity is immediate here because all covariances are bounded by the same quadratic form, e.g.
+
+$$
+\langle f,T_a f\rangle,\ \langle f,G_\varepsilon f\rangle
+\ \le\ C \int \frac{|\widehat f(k)|^2}{m^2+|k|^2}\,dk
+\ \lesssim\ \|f\|_{H^1}^2
+$$
+
+for some $C$ independent of $a,\varepsilon$.
+Hence
+
+$$
+\bar\mu_a \ \Rightarrow\ \mu_m
+\qquad\text{and}\qquad
+\mu_\varepsilon \ \Rightarrow\ \mu_m
+\quad\text{in } \mathcal S'(\mathbb R^d).
+$$
+
+In particular, **every** zero‑spacing limit of the lattice construction and **every** de‑mollification limit of the smoothed construction coincide with $\mu_m$.
+
+---
+
+## Osterwalder–Schrader axioms via the two approximations
+
+* **Reflection positivity (RP).**
+  On the lattice, Gaussian RP with respect to time‑reflection is standard and holds at every $a$ (it is a positivity statement for the matrix
+  $\big\langle\theta f_i,\,(-\Delta_a+m^2)^{-1} f_j\big\rangle$ with $f_i$ supported in $t\ge0$). Since RP is a finite‑dimensional positive‑semidefinite condition, it is **closed under weak limits**: if
+  $\sum_{i,j}\bar{c}_i c_j\langle\theta f_i, C_n f_j\rangle\ge0$ for all $n$ and $C_n\to C$ pointwise on $\mathcal S\times\mathcal S$, then the same inequality holds for $C$. Hence RP passes to $\mu_m$.
+
+* **Euclidean invariance.**
+  The smoothed continuum approximants $\mu_\varepsilon$ are **exactly** translation‑rotation invariant (the Fourier weight $|\widehat\rho(\varepsilon k)|^2$ is radial), so invariance passes to the limit $\mu_m$.
+
+* **Symmetry, clustering, regularity.**
+  Symmetry and reflection symmetry are immediate from the covariance. Exponential clustering holds for $m>0$ because $G_m(x)$ decays like $e^{-m|x|}$ at infinity. All OS axioms for the free massive field are thus satisfied by $\mu_m$.
+
+*(If you are aiming at the full $D=d+1$‑dimensional Euclidean QFT setting, just take $x=(t,\mathbf x)$, run the same two approximations on $\mathbb Z^{D}$ and $\mathbb R^{D}$, and reflect in $t$.)*
+
+---
+
+## What to watch out for
+
+* **Massless case on $\mathbb R^d$.**
+  For $m=0$ there are IR issues (no finite‑variance at $k=0$). Work on the torus (project out the zero mode) or keep $m>0$.
+
+* **Choice of extension $E_a$.**
+  Piecewise constant works for characteristic‑functional convergence; using hat functions upgrades the operator convergence $T_a\to G_m$ to a standard resolvent convergence statement.
+
+* **Order of limits (volume $L\to\infty$ vs. $a\downarrow0$).**
+  With $m>0$, you can take limits in either order (or jointly) because of exponential decay; technically, one proves uniform bounds first on a periodic box and then passes $L\to\infty$.
+
+---
+
+## Bottom line
+
+**Yes.** Construct the massive discrete GFF on $a\mathbb Z^d$, extend it to $\mathcal S'$, and let $a\downarrow0$. Construct the mollified continuum GFF and let $\varepsilon\downarrow0$. Both sequences of centered Gaussians converge (in $\mathcal S'$) to the **same** limit $\mu_m$ with covariance $(-\Delta+m^2)^{-1}$. Reflection positivity (proved cleanly on the lattice) and Euclidean invariance (proved cleanly for the mollified continuum) pass to the limit, so $\mu_m$ satisfies the OS axioms.
+
+If you want, I can write this as a compact theorem/proof (with the Fourier‑symbol computation spelled out and the RP closure lemma) or adapt it to a torus/infinite‑volume presentation you prefer.

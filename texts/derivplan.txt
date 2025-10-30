@@ -1,0 +1,73 @@
+Taylor remainder bound for complex exponential
+============================================
+
+Goal
+----
+Prove a reusable inequality controlling the quadratic remainder of the complex
+exponential:
+
+    lemma exp_taylor_quadratic_bound {R : Type*} [IsROrC R]
+      (C : ℝ) (hC : 0 ≤ C)
+      : ∀ z : R, ‖exp z - (1 + z)‖ ≤ C * ‖z‖^2.
+
+Since we only need a concrete constant, it suffices to show the statement with
+C = 1 (or 1/2 if convenient).  The final version will be specialized to `R = ℂ`
+inside `IntegralDifferentiation.lean`.
+
+Structure of the proof
+----------------------
+1. **Establish power-series control.**
+   Use the analytic expansion of the exponential to write
+
+       Complex.exp z - (1 + z) = ∑ n ≥ 2, z^n / n!
+
+   in norm, bounded by the tail of the exponential series.  Mathlib’s
+   `IsROrC.hasSum_exp` together with `norm_sum_le` should supply the needed
+   estimates.
+
+2. **Bound the remainder by |z|² times an exponential.**
+   Factor out `‖z‖^2`:
+
+       ‖∑ n≥2 z^n / n!‖ ≤ ‖z‖^2 * ∑ n≥0 ‖z‖^n / (n+2)!
+
+   Show the remaining series is at most `exp ‖z‖`.  Conclude a bound of the
+   form `‖exp z - (1 + z)‖ ≤ ‖z‖^2 * Real.exp ‖z‖`.
+
+3. **Choose a uniform constant on bounded neighbourhoods.**
+   To feed the dominated convergence argument we only need the bound on small
+   discs, say `‖z‖ ≤ 1`.  There we can set
+
+       C := sup_{0≤r≤1} r^(-2) * r^2 * exp r = exp 1,
+
+   so `‖exp z - (1 + z)‖ ≤ Real.exp 1 * ‖z‖^2` for all `‖z‖ ≤ 1`.
+
+   The general unrestricted inequality then comes from splitting cases:
+   - If `‖z‖ ≤ 1`, apply the local bound with `C = exp 1`.
+   - If `‖z‖ > 1`, the trivial inequality
+
+         ‖exp z - (1 + z)‖ ≤ ‖exp z‖ + ‖1 + z‖
+
+     controls the remainder by a constant times `‖z‖^2` because `‖z‖^2 ≥ ‖z‖`.
+
+4. **Wrap up in a lemma.**
+   Formal statement targeted to `ℂ`:
+
+       lemma exp_taylor_bound (z : ℂ) :
+         ‖Complex.exp z - (1 + z)‖ ≤ (Real.exp 1 + 2) * ‖z‖^2
+
+   (the extra `+ 2` absorbs the large-‖z‖ case).  This lemma will serve as the
+   Taylor remainder estimate inside `bound_difference_quotient_exp`.
+
+Deliverables
+------------
+- Implement the lemma in `IntegralDifferentiation.lean` after collecting the
+  supporting mathlib lemmas (`Real.exp_pos`, series tail bounds, etc.).
+- Add a short documentation block explaining the choice of constant and the
+  intended downstream uses.
+
+Optional refinements
+--------------------
+- Tune the constant by leveraging `abs_exp_sub_add_one_le` once the corresponding
+  mathlib lemma is located; this may yield the canonical `‖z‖^2 / 2` bound.
+- Generalize to any `IsROrC` if broader reuse is needed elsewhere in the
+  project.

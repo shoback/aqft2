@@ -1,0 +1,181 @@
+Status report (Oct 13, 2025)
+
+Overview
+--------
+Major refactors and progress across Schwinger, GFFMconstruct, GaussianMoments, and GaussianFreeField modules:
+
+- Organization
+  • Moved SchwingerFunctionℂ₂ and CovarianceBilinear definitions to Aqft2/Schwinger.lean.
+  • Extracted complex pairing algebra to new file Aqft2/ComplexTestFunction.lean:
+    re/im combination lemmas, ω-linearity decompositions, and pairing_linear_combo.
+  • Removed private wrapper SchwingerFunctionℂ₂_local and updated its usages.
+
+- Bilinearity from integrability
+  • Added CovarianceBilinear_of_integrable in Schwinger.lean:
+    assumes Integrable (⟨ω,φ⟩⟨ω,ψ⟩) for all φ, ψ and proves full ℂ-bilinearity of S₂.
+  • Simplifies proving CovarianceBilinear for specific measures by separating the analytic
+    (integrability) input from the algebraic linearity of pairing.
+
+- Gaussian Free Field (GFF)
+  • Reproved covarianceBilinear_gaussianFreeField via CovarianceBilinear_of_integrable.
+    gaussianFreeField_satisfies_OS0 now reduces entirely to the 2-point integrability lemma.
+  • Drafted gaussian_pairing_product_integrable_free_2point in GaussianMoments; the proof
+    still contains two sorries (complex product expansion + L¹ control of the imaginary part).
+  • Moved alternate OS0 proofs (gaussian_satisfies_OS0_alt, gaussianFreeField_satisfies_OS0_alt)
+    to old/GaussianFreeField_OS0_alt.lean.
+  • Introduced `IntegralDifferentiation_axioms.lean`, now imported in `GFFMComplex`, to supply
+    the differentiation-under-the-integral lemmas as temporary axioms; goal is to derive them
+    from the Fernique-type hypotheses stated in `GFFMconstruct`.
+
+- Minlos/Schwinger bridge
+  • Kept schwinger_eq_Qc_free (GFF_Minlos_Complex) equating S₂ with MinlosAnalytic.Qc.
+  • Proved the bridge lemma free_Qc_eq_freeCovarianceℂ, identifying Qc with
+    freeCovarianceℂ_bilinear; a follow-up step is still needed to relate this
+    bilinear form to the sesquilinear freeCovarianceℂ used elsewhere.
+
+- Lint and hygiene
+  • Removed global [SigmaFinite μ] section var in Schwinger.lean to satisfy linter.
+  • Replaced fragile congr/ext goals in integrals with simp-based steps.
+
+Current status by file
+----------------------
+Aqft2/Schwinger.lean
+- DONE: SchwingerFunctionℂ₂ and CovarianceBilinear centralized here.
+- DONE: CovarianceBilinear_of_integrable implemented.
+- Lint: cleaned; only unrelated placeholders remain.
+
+Aqft2/ComplexTestFunction.lean
+- NEW: Houses pairing_linear_combo and helper lemmas (re/im combination, ω linearity).
+- Used by Schwinger/GFFMconstruct.
+
+Aqft2/GFFMconstruct.lean
+- schwinger_eq_integral_product: present.
+- mixed_deriv_minlos_Qc, mixed_deriv_schwinger: present with helper sorries for dominated-convergence and integrability.
+- freeCovarianceForm_struct: structure present; add_left/smul_left remain TODO.
+- gff_two_point_equals_covarianceℂ_free: proved via schwinger_eq_Qc_free +
+  free_Qc_eq_freeCovarianceℂ, yielding the bilinear covariance; remaining gap is
+  upgrading to the sesquilinear freeCovarianceℂ when needed.
+
+Aqft2/GaussianMoments.lean
+- NEW: Implements gaussian_complex_pairing_abs_sq_integrable via Option B L² control.
+- gaussian_pairing_product_integrable_free_2point drafted; two sorries remain
+  (complex product expansion and integrability of the imaginary part).
+- Higher-n moment theorems outlined but still depend on finishing the 2-point case.
+
+Aqft2/GaussianFreeField.lean
+- gaussian_satisfies_OS0: generic theorem (complete).
+- covarianceBilinear_gaussianFreeField now pulls integrability from GaussianMoments.
+- gaussianFreeField_satisfies_OS0: relies on the unfinished 2-point integrability lemma.
+- gaussian_satisfies_OS1: two placeholders remain (product→sum inequality and
+  TwoPointIntegrable witness for p = 2).
+- OS2 path is complete given CovarianceEuclideanInvariantℂ assumption.
+- OS4 skeleton remains with placeholders (translate_test_function definition and
+  gaussian_satisfies_OS4_clustering).
+
+Aqft2/GFF_OS3.lean and Aqft2/OS3.lean
+- OS3 framework in place; still requires reflection invariance/positivity via free covariance
+  and matrix PSD-of-exp lemma from HadamardExp.
+  Removed the incorrect diagonal_covariance_is_real_GFF in favor of the general
+  diagonal_covariance_is_real lemma; future work must invoke the sesquilinear
+  covariance once the bridge is extended beyond the bilinear form.
+
+Aqft2/GFF_OS3_real.lean
+- Real reflection positivity proof skeleton complete; remaining sorries are
+  freeCovarianceFormR_reflection_nonneg,
+  freeCovarianceFormR_eq_covariance, and
+  freeCovarianceFormR_reflection_invariant.
+- Once these three lemmas are supplied, the reduction shows
+  QFT.gaussianFreeField_OS3_real (and hence OS3) is finished.
+
+Aqft2/HadamardExp.lean
+- DONE: entrywise-exp-preserves-PSD argument completed using
+  `summable_hadamardQuadSeries` and the reorganised quadratic-form summability proof.
+
+What’s proven vs pending (high level)
+-------------------------------------
+- OS0 (generic): gaussian_satisfies_OS0 is complete.
+- OS0 (GFF): blocked by gaussian_pairing_product_integrable_free_2point (two sorries).
+- OS1 (GFF): proof skeleton present; two analytic sorries remain inside gaussian_satisfies_OS1.
+- OS2 (GFF): holds under CovarianceEuclideanInvariantℂ; awaiting explicit invariance lemma for μ_GFF.
+- OS3 (GFF): proof reduces entirely to the real case; outstanding work is to show
+  freeCovarianceFormR_reflection_nonneg, freeCovarianceFormR_eq_covariance, and
+  freeCovarianceFormR_reflection_invariant.
+- OS4 (GFF): skeleton with placeholders; needs translate_test_function and clustering decay.
+
+Blocking items for gaussianFreeField_satisfies_all_OS_axioms
+------------------------------------------------------------
+1. **OS0 input**: Finish gaussian_pairing_product_integrable_free_2point
+  (Aqft2/GaussianMoments.lean lines ~160–225) to remove the remaining sorries.
+2. **OS1 input**: Complete gaussian_satisfies_OS1 in Aqft2/GaussianFreeField.lean by providing
+  (a) the product→sum inequality using the covariance bound, and
+  (b) a TwoPointIntegrable witness for p = 2.
+3. **OS3 input**: Resolve freeCovarianceFormR_reflection_invariant and
+  freeCovarianceFormR_reflection_matrix_posSemidef in Aqft2/GFF_OS3_real.lean.
+4. **Optional future**: Implement OS4 proofs to remove the h_OS4 hypothesis once
+  translate_test_function and clustering decay are in place.
+
+Action items (next steps)
+-------------------------
+1) Close OS0 for GFF
+  - Formalize the analytic proofs in `IntegralDifferentiation.lean` so that
+    `IntegralDifferentiation_axioms` can be discharged using the Fernique-type
+    assumptions already recorded in `GFFMconstruct`.
+
+2) Finish OS1 details
+  - Provide a clean inequality to convert M·‖f‖₁·‖f‖₂ into a sum bound inside the
+    exponential.
+  - Supply TwoPointIntegrable for p = 2 using kernel or nuclearity bounds.
+
+3) Complete OS3 real reflection positivity
+  - Establish freeCovarianceFormR_reflection_nonneg via the Minlos reflection argument.
+  - Identify freeCovarianceFormR with the covariance integral
+    (freeCovarianceFormR_eq_covariance).
+  - Prove freeCovarianceFormR_reflection_invariant; the matrix positivity then
+    follows from existing HadamardExp machinery.
+
+4) Provide GFF-specific invariances
+  - Derive CovarianceEuclideanInvariantℂ (μ_GFF m) directly from the free covariance.
+
+5) OS4
+  - Implement translate_test_function on Schwartz/TestFunction.
+  - Prove CovarianceClustering using massive propagator decay; finish the OS4 skeleton.
+
+Build status
+------------
+- All edited files build with only the intended placeholder warnings (sorries) remaining.
+- No outstanding linter errors after removing the unused section variable in Schwinger.
+
+Notes
+-----
+- The integrability-based approach to bilinearity has simplified OS0 for GFF to a single,
+  well-scoped analytic step (finite moments), separated from algebraic linearity.
+- The Minlos/Schwinger bridge now yields S₂ = freeCovarianceℂ_bilinear; a
+  targeted comparison lemma is still needed to recover the sesquilinear
+  freeCovarianceℂ appearing in other modules.
+
+Outstanding sorry inventory (Aqft2/*.lean)
+-----------------------------------------
+- Total sorry count: 126
+- Per-file breakdown:
+  * `MixedDerivLemma.lean`: 2
+  * `GaussianMoments.lean`: 3
+  * `GFFMComplex.lean`: 3
+  * `Euclidean.lean`: 1
+  * `GFF_OS3_real.lean`: 2
+  * `QFTHilbertSpace.lean`: 5
+  * `GaussianFreeField.lean`: 4
+  * `Basic.lean`: 1
+  * `SCV.lean`: 1
+  * `Schwinger.lean`: 21
+  * `SchurProduct.lean`: 1
+  * `FunctionalAnalysis.lean`: 9
+  * `HadamardExp.lean`: 1
+  * `OS4.lean`: 18
+  * `GFFMconstruct.lean`: 1
+  * `Covariance.lean`: 13
+  * `TopologyLemmas.lean`: 1
+  * `IntegralDifferentiation.lean`: 11
+  * `Operators.lean`: 13
+  * `MinlosAnalytic.lean`: 5
+  * `HilbertSpace.lean`: 9
+  * `ComplexTestFunction.lean`: 1

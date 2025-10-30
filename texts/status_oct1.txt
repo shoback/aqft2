@@ -1,0 +1,51 @@
+Archived status (Oct 1, 2025)
+
+The following is the original contents of texts/status.txt as of Oct 1, 2025:
+
+----------------------------------------------------------------
+Status report (Oct 1, 2025)
+
+Goal
+-----
+Complete the proof of
+
+  theorem Aqft2.gaussianFreeField_satisfies_all_OS_axioms
+    (m : ℝ) [Fact (0 < m)]
+    (h_bound : CovarianceBoundedComplex (μ_GFF m))
+    (h_euc   : CovarianceEuclideanInvariantℂ (μ_GFF m))
+    (h_OS4   : OS4_Clustering (μ_GFF m)) :
+    OS0_Analyticity (μ_GFF m) ∧ OS1_Regularity (μ_GFF m) ∧ OS2_EuclideanInvariance (μ_GFF m)
+    ∧ OS3_ReflectionPositivity (μ_GFF m) ∧ OS4_Clustering (μ_GFF m)
+
+where μ_GFF m := gaussianFreeField_free m. This theorem currently compiles and bundles the five axioms from existing pieces, but relies on upstream lemmas that still contain sorries. This document evaluates what is needed to discharge all sorries and make the theorem unconditional (i.e., with GFF-specific proofs of the assumptions).
+
+High-level dependency graph
+---------------------------
+Within GFFfinish.lean, the master theorem uses the following inputs and results:
+
+- isGaussianGJ (μ_GFF m)
+  • Source: Aqft2/GFFMconstruct.lean (isGaussianGJ_gaussianFreeField_free)
+
+- OS0_Analyticity (μ_GFF m)
+  • Source: Aqft2/GaussianFreeField.lean (gaussianFreeField_satisfies_OS0)
+  • Depends on: gaussian_satisfies_OS0 (complete) + CovarianceBilinear (for μ_GFF m)
+
+- OS1_Regularity (μ_GFF m)
+  • Source: Aqft2/GaussianFreeField.lean (gaussian_satisfies_OS1)
+  • Depends on: isGaussianGJ μ, CovarianceBoundedComplex μ
+
+- OS2_EuclideanInvariance (μ_GFF m)
+  • Source: Aqft2/GaussianFreeField.lean (gaussian_satisfies_OS2)
+  • Depends on: isGaussianGJ μ, CovarianceEuclideanInvariantℂ μ
+
+- OS3_ReflectionPositivity (μ_GFF m)
+  • Source: Aqft2/GFF_OS3.lean (gaussianFreeField_satisfies_OS3)
+  • Depends on: factorization lemma from OS3.lean and GFF-specific covariance properties
+
+- OS4_Clustering (μ_GFF m)
+  • Source: to be supplied (either directly or via gaussian_satisfies_OS4_clustering)
+
+Current file-by-file status and required work
+--------------------------------------------
+[Original status content continues...]
+----------------------------------------------------------------

@@ -60,7 +60,7 @@ exponential decay dominates polynomial growth, preserving positivity under time 
 ### Integration:
 
 **AQFT Connections:** Links to `Basic` (fields), `Operators` (framework), `Euclidean` (symmetries),
-`Schwinger` (correlations), `GFFconstruct` (Gaussian realization), `OS_Axioms` (verification).
+`Schwinger` (correlations), `GFFMconstruct` (Gaussian realization), `OS_Axioms` (verification).
 
 **Physical Role:** SpatialL2 = field state space, E(k) = energy spectrum, heat kernels =
 Euclidean time evolution for constructive QFT in Osterwalder-Schrader framework.

@@ -1,0 +1,83 @@
+Bochner's theorem gives conditions for a real characteristic function to be derived from a probability measure. what are the conditions on the measure for the characteristic function to be entire complex analytic ?
+
+Short answer: exactly when the law has finite exponential moments of **every** order.
+
+More precisely, for a probability measure $\mu$ on $\mathbb{R}$ with characteristic function
+
+$$
+\varphi(t)=\int_{\mathbb{R}} e^{itx}\,\mu(dx),
+$$
+
+the following are equivalent:
+
+1. $\varphi$ extends to an entire function on $\mathbb{C}$.
+
+2. The moment-generating function exists on all of $\mathbb{R}$:
+
+$$
+M(s)=\int_{\mathbb{R}} e^{sx}\,\mu(dx)<\infty\quad\text{for every }s\in\mathbb{R}.
+$$
+
+3. For every $a>0$,
+
+$$
+\int_{\mathbb{R}} e^{a|x|}\,\mu(dx)<\infty .
+$$
+
+Sketch why: if $\int e^{a|x|}d\mu<\infty$, then for any $z=x+iy$ with $|y|<a$ the integrand $e^{izx}$ is $\mu$-integrable (bounded by $e^{|y||x|}$), so $\varphi$ is analytic on the strip $|\operatorname{Im} z|<a$ by dominated convergence/Morera. Having this for every $a>0$ gives an entire extension. Conversely, if $\varphi$ is entire, evaluating the analytic continuation on the imaginary axis $z=-is$ yields $M(s)=\varphi(-is)$, so all exponential moments are finite.
+
+Remarks & examples:
+
+* Compact support ⇒ entire (indeed, of exponential type by Paley–Wiener), hence condition (3) holds.
+* Gaussian satisfies (3), so its $\varphi$ is entire.
+* Lognormal has all polynomial moments finite but fails (3); its $\varphi$ does **not** extend entire (only to a strip of width 0).
+* Having $\int e^{a|x|}d\mu<\infty$ for a single $a>0$ gives analyticity only in the strip $|\operatorname{Im} z|<a$.
+
+
+can we generalize to infinite dimensions as in minlos' theorem?
+
+Yes—there’s a clean infinite-dimensional analogue on nuclear spaces.
+
+Let $E$ be a real nuclear locally convex space, $E'$ its strong dual, and $\mu$ a Radon probability measure on $E'$.
+Its characteristic functional is
+
+$$
+\chi(\varphi)=\int_{E'} e^{i\langle x,\varphi\rangle}\, \mu(dx),\qquad \varphi\in E .
+$$
+
+# The criterion (Minlos setting)
+
+The following are equivalent:
+
+1. **Entire extension.** $\chi$ extends to an entire (Fréchet-holomorphic) function on the complexification $E_\mathbb{C}$.
+
+2. **All exponential moments, locally uniformly.** For every continuous seminorm $q$ on $E'$ (equivalently, for the polar seminorm $q^\circ$ on $E$),
+
+$$
+\forall a>0\ \exists\,U\ni 0\text{ (a \(q^\circ\)-bounded nbhd in \(E\)) s.t.}\ 
+\sup_{\varphi\in U}\ \int_{E'} e^{a\,|\langle x,\varphi\rangle|}\,\mu(dx)<\infty .
+$$
+
+(Heuristically: the measure has finite exponential moments of **every** order in **every direction**, with bounds uniform on small neighborhoods of $0$.)
+
+3. **Global Laplace transform.** The Laplace transform
+
+$$
+L(\psi)=\int_{E'} e^{\langle x,\psi\rangle}\,\mu(dx)
+$$
+
+is finite for all $\psi\in E$ and is locally bounded on $E$.
+
+# Why this matches the 1-D story
+
+* (2) ⇒ (1): The uniform exponential integrability gives local boundedness of $\varphi\mapsto \int e^{\langle x,\,\operatorname{Im}\varphi\rangle}\,d\mu$. Together with dominated convergence, $\chi$ is Gateaux-holomorphic and locally bounded; on nuclear spaces that implies Fréchet-holomorphy (entire on $E_\mathbb{C}$).
+* (1) ⇒ (3): Entirety on $E_\mathbb{C}$ lets you evaluate on the imaginary axis $\varphi\mapsto -i\psi$, giving $L(\psi)=\chi(-i\psi)$ and hence finiteness and local boundedness.
+* (3) ⇒ (2): Local boundedness of $L$ yields the required uniform exponential bounds on small $q^\circ$-balls.
+
+# Helpful special cases
+
+* **Compactly supported $\mu$** (in $E'$ for the strong topology) ⇒ $\chi$ is entire of exponential type (Paley–Wiener–type behavior).
+* **Gaussian measures on $E'$** satisfy the criterion: $\chi(\varphi)=\exp\!\big(-\tfrac12 Q(\varphi)\big)$ with a continuous quadratic form $Q$, hence entire on $E_\mathbb{C}$. (Directional marginals are 1-D Gaussians with all exponential moments.)
+* **Strip analyticity:** If you only have $\int e^{a|\langle x,\varphi\rangle|}\,d\mu<\infty$ for $|\varphi|$ in a fixed bounded set and for $a$ up to some $a_0>0$, you get analyticity only on a corresponding tube/strip, just as in $\mathbb{R}$.
+
+So, just like in the finite-dimensional case, “entire characteristic functional” ⇔ “all exponential moments,” with the essential infinite-dimensional wrinkle that you need **local uniformity in $\varphi$** across the neighborhoods determined by the seminorms of the nuclear space.

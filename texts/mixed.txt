@@ -1,0 +1,67 @@
+Yes—there’s a clean, general “differentiate under the integral” criterion, and in your Gaussian setup it applies immediately.
+
+# A handy master theorem (Lebesgue–dominated differentiation)
+
+Let ((\Omega,\mathcal F,\mu)) be a measure space. Suppose (g:\mathbb R\times\Omega\to\mathbb C) satisfies:
+
+1. For each (t), (x\mapsto g(t,x)) is integrable.
+2. For a.e. (x), (t\mapsto g(t,x)) is differentiable with derivative (\partial_t g(t,x)).
+3. There is an integrable (H(x)\in L^1(\mu)) and a neighborhood (I\ni t_0) such that
+   [
+   |\partial_t g(t,x)|\le H(x)\quad\text{for all }t\in I\text{ and a.e. }x.
+   ]
+
+Then (F(t):=\int g(t,x),d\mu(x)) is differentiable at (t_0) and
+[
+F'(t_0)=\int \partial_t g(t_0,x),d\mu(x).
+]
+(Proof: write the difference quotient and use dominated convergence on (\partial_t g).)
+
+There are many variants (uniform integrability, Vitali, etc.), but this is the workhorse.
+
+# Apply it to (g(t,x)=e^{itX(x)})
+
+Take a real random variable (X\in L^1) on ((\Omega,\mu)) and
+[
+g(t,x):=e^{itX(x)},\qquad \partial_t g(t,x)= i,X(x),e^{itX(x)}.
+]
+Since (|e^{itX}|=1), the bound
+[
+|\partial_t g(t,x)|=|X(x)|
+]
+works for **all** (t). If (\mathbb E|X|<\infty) then the theorem gives
+[
+\frac{d}{dt},\mathbb E!\left[e^{itX}\right]
+= \mathbb E!\left[iX,e^{itX}\right].
+]
+
+A slightly more elementary proof uses the identity
+[
+\frac{e^{i(t+h)X}-e^{itX}}{h}-iX e^{itX}
+= iX e^{itX}\Big(\frac{e^{ihX}-1}{ihX}-1\Big),
+]
+with (\big|\tfrac{e^{iy}-1}{iy}\big|\le 1) for all (y), giving the domination
+[
+\Big|\frac{e^{i(t+h)X}-e^{itX}}{h}-iX e^{itX}\Big|\le 2|X|,
+]
+and pointwise convergence to (0). Dominated convergence with (2|X|\in L^1) then yields the result.
+
+# Higher derivatives
+
+If (X\in L^k) then the same argument iterated gives
+[
+\frac{d^k}{dt^k},\mathbb E[e^{itX}]= i^k,\mathbb E!\big[X^k e^{itX}\big],
+]
+so the characteristic function is (C^k). For a Gaussian (X), all moments are finite, hence the characteristic function is (C^\infty) and even real-analytic.
+
+# In your constructive QFT setting
+
+For a smeared field (\phi(f)=\langle X,f\rangle) (with (f) real), the pushforward under your Gaussian measure is 1-D Gaussian. Therefore (\phi(f)\in L^p) for every (p<\infty). In particular, (\mathbb E|\phi(f)|<\infty), so the theorem applies and
+[
+\frac{d}{dt},\mathbb E!\left[e^{it\phi(f)}\right]
+= \mathbb E!\left[i,\phi(f),e^{it\phi(f)}\right].
+]
+
+# If you want a one-line “axiom” to cite
+
+For Gaussian measures on (separable) locally convex spaces, **Fernique’s theorem** gives exponential integrability of every continuous linear functional. That immediately implies the (L^k) hypotheses above for all (k), hence all under-the-integral derivatives of the characteristic functional are justified.

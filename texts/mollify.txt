@@ -1,0 +1,72 @@
+Mollified construction plan for the massive GFF (existence via ε ↓ 0)
+
+Goal
+- Prove OS axioms from the Gaussian generating functional Z(f) = exp(−1/2 ⟨f, G_m f⟩).
+- Obtain the probability measure μ_m by constructing mollified Gaussians μ_ε and taking a weak limit ε ↓ 0.
+
+Key points
+- Keep m > 0 (no IR issue).
+- Mollified measures μ_ε are centered Gaussians with covariance G_ε = G_m * (ρ_ε * ṽρ_ε) * G_m.
+- μ_ε generally do NOT satisfy reflection positivity (RP); that’s fine: use μ_ε only for existence.
+- Prove RP and Euclidean invariance directly for the target covariance G_m; transfer to μ_m.
+
+Step 1 — Covariance layer (Aqft2/Covariance.lean)
+1. Mollifier and scaling
+   - Fix ρ ∈ 𝒮 with ∫ ρ = 1 and define ρ_ε(x) = ε^{−d} ρ(x/ε).
+
+2. Define mollified covariance forms
+   - Fourier multiplier: M_m(k) = 1/(|k|^2 + m^2).
+   - Mollified multiplier: M_{ε}(k) = |ρ̂(ε k)|^2 · M_m(k).
+   - Define, for real test functions f,g ∈ 𝒮(ℝ^d):
+       C_ε(f,g) := ∫ M_{ε}(k) · f̂(k) · ĝ(k) dk / (2π)^d.
+     Provide complex extension C_ε^ℂ similarly.
+
+3. Properties
+   - Positivity / Hermitian: C_ε is Hermitian positive semidefinite (multiplier ≥ 0).
+   - Euclidean invariance: C_ε is translation-rotation invariant (M_{ε} is radial in k).
+   - Uniform bound: C_ε(f,f) ≤ C · ∫ (|f̂(k)|^2/(|k|^2 + m^2)) dk ≲ ‖f‖_{H^1}^2 with C independent of ε.
+   - Convergence: for each f, C_ε(f,f) → C(f,f) by dominated convergence (|ρ̂(ε k)| → 1, |ρ̂| ≤ 1).
+
+4. Target covariance OS facts (for C = C_m)
+   - Spectral/time-slice representation:
+       C(t,x) = ∫_{ℝ^{d-1}} e^{−ω(p) |t|} e^{i p·x} (2 ω(p))^{−1} dp,  ω(p) = √(|p|^2 + m^2).
+   - Reflection positivity (RP): for f supported in t ≥ 0,
+       ∑_i,j c̄_i c_j ⟨θ f_i, C f_j⟩ = ∫ (2ω)^{−1} |∫_0^∞ e^{−ω t} ẑf_i(p,t) dt|^2 dp ≥ 0.
+   - Euclidean invariance: immediate from radial multiplier M_m(k).
+
+Step 2 — Construct the mollified Gaussians (Aqft2/GFFK.lean or GFFMconstruct.lean)
+1. For ε > 0, define μ_ε as the centered Gaussian measure with covariance C_ε
+   - Use your existing Kolmogorov/Minlos constructor with covariance form C_ε (real or complex version as needed).
+
+2. Generating functional
+   - Prove: ∀ f,  Z_ε(f) := 𝔼_{μ_ε}[exp(i⟨ω, f⟩)] = exp(−1/2 · C_ε(f,f)).
+   - This is by design of the Minlos/Kolmogorov constructor.
+
+Step 3 — Convergence μ_ε ⇒ μ_m (ε ↓ 0)
+1. Pointwise convergence of Z_ε(f): by C_ε(f,f) → C(f,f).
+2. Equicontinuity at 0: uniform bound C_ε(f,f) ≤ const · ‖f‖_{H^1}^2.
+3. Apply Lévy–Sazonov (Gaussian measures on nuclear space 𝒮′) to conclude μ_ε ⇒ μ_m.
+4. Define μ_m as this limit; its characteristic functional is Z(f) = exp(−1/2 · C(f,f)).
+
+Step 4 — OS axioms from the generating functional (Aqft2/GFF_OS3.lean)
+1. Reflection positivity: use the spectral/time-slice representation of C (Step 1.4) to prove RP directly for Z.
+2. Euclidean invariance: from the radial multiplier (Step 1.4) and Gaussian invariance.
+3. Hermitian symmetry: immediate for Gaussian with real symmetric covariance.
+4. Conclude OS for μ_m.
+
+Deliverables (checklist)
+- Covariance.lean
+  [ ] defs: C_ε (real/complex), lemmas: positivity, invariance, uniform bound, convergence C_ε → C
+  [ ] spectral/time-slice representation for C
+  [ ] RP lemma for C; Euclidean invariance lemma for C
+- GFFK.lean / GFFMconstruct.lean
+  [ ] μ_ε constructor from C_ε; generating functional Z_ε
+  [ ] μ_ε ⇒ μ_m proof (weak convergence)
+- GFF_OS3.lean
+  [ ] OS axioms for μ_m from covariance lemmas
+
+Notes / pitfalls
+- μ_ε typically fails RP; do not use μ_ε for RP—prove RP for the limiting C and then apply to μ_m.
+- Keep m > 0; for m = 0, work on the torus and project out the zero mode.
+- For rigorous Step 3, reference Sazonov/Lévy continuity for Gaussian measures on 𝒮′.
+- Finite-volume variants (torus) can be used to justify dominated convergence and bounds if needed.

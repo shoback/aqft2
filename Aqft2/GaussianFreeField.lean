@@ -60,7 +60,8 @@ import Mathlib.Tactic.NormNum
 
 import Aqft2.Basic
 import Aqft2.OS_Axioms
-import Aqft2.GFFconstruct
+import Aqft2.GFFMconstruct
+import Aqft2.GFFMComplex
 import Aqft2.Euclidean
 import Aqft2.DiscreteSymmetry
 import Aqft2.SCV
@@ -68,7 +69,8 @@ import Aqft2.FunctionalAnalysis
 import Aqft2.OS4
 import Aqft2.Minlos
 import Aqft2.Covariance
-import Aqft2.HadamardExp
+import Aqft2.MinlosAnalytic
+import Aqft2.Schwinger
 
 open MeasureTheory Complex
 open TopologicalSpace SchwartzMap
@@ -217,14 +219,6 @@ def CovarianceContinuous (dμ_config : ProbabilityMeasure FieldConfiguration) : 
   ∀ (J K : TestFunctionℂ), Continuous (fun z : ℂ =>
     SchwingerFunctionℂ₂ dμ_config (z • J) K)
 
-/-- Assumption: SchwingerFunctionℂ₂ is linear in both arguments -/
-def CovarianceBilinear (dμ_config : ProbabilityMeasure FieldConfiguration) : Prop :=
-  ∀ (c : ℂ) (φ₁ φ₂ ψ : TestFunctionℂ),
-    SchwingerFunctionℂ₂ dμ_config (c • φ₁) ψ = c * SchwingerFunctionℂ₂ dμ_config φ₁ ψ ∧
-    -- DO NOT CHANGE: must be φ₁ + φ₂ (first-arg additivity). Using φ₁ + φ₁ breaks GJcov_bilin and OS0 expansion.
-    SchwingerFunctionℂ₂ dμ_config (φ₁ + φ₂) ψ = SchwingerFunctionℂ₂ dμ_config φ₁ ψ + SchwingerFunctionℂ₂ dμ_config φ₂ ψ ∧
-    SchwingerFunctionℂ₂ dμ_config φ₁ (c • ψ) = c * SchwingerFunctionℂ₂ dμ_config φ₁ ψ ∧
-    SchwingerFunctionℂ₂ dμ_config φ₁ (ψ + φ₂) = SchwingerFunctionℂ₂ dμ_config φ₁ ψ + SchwingerFunctionℂ₂ dμ_config φ₁ φ₂
 
 def GJcov_bilin (dμ_config : ProbabilityMeasure FieldConfiguration)
   (h_bilinear : CovarianceBilinear dμ_config) : LinearMap.BilinMap ℂ TestFunctionℂ ℂ :=
@@ -246,7 +240,6 @@ def GJcov_bilin (dμ_config : ProbabilityMeasure FieldConfiguration)
 theorem gaussian_satisfies_OS0
   (dμ_config : ProbabilityMeasure FieldConfiguration)
   (h_gaussian : isGaussianGJ dμ_config)
-  (h_continuous : CovarianceContinuous dμ_config)
   (h_bilinear : CovarianceBilinear dμ_config)
   : OS0_Analyticity dμ_config := by
   intro n J
@@ -369,189 +362,6 @@ theorem gaussian_satisfies_OS2
   -- Use Euclidean invariance directly (symmetric form)
   exact (h_euclidean_invariant g f f).symm
 
-/-! ## OS3: Reflection Positivity for Gaussian Measures
-
-For Gaussian measures, reflection positivity can be verified using the explicit
-exponential form and properties of the covariance under time reflection.
-
-Following Glimm-Jaffe Theorem 6.2.2, we examine Z[F̄ - CF'] where F is a positive-time
-test function, F̄ is its complex conjugate, F' is its TIME REFLECTION, and C is the
-covariance operator.
-
-The key insight is to expand the exponent ⟨F̄ - CF', C(F̄ - CF')⟩ and use reflection
-positivity of the covariance. The TIME REFLECTION F' = Θ(F) where Θ is the time
-reflection operation from DiscreteSymmetry.
-
-The Glimm-Jaffe argument shows that if the covariance C satisfies reflection positivity,
-then the generating functional Z[F̄F] for positive-time test functions has the required
-properties for OS3. The time reflection enters through the auxiliary expression F̄ - CF'.
--/
-
-/-- The covariance operator extracted from the 2-point Schwinger function.
-    For a Gaussian measure, this defines a continuous linear map C : TestFunctionℂ → TestFunctionℂ
-    such that ⟨f, Cg⟩ = S₂(f̄, g) -/
-def covarianceOperator (dμ_config : ProbabilityMeasure FieldConfiguration)
-  (h_bilinear : CovarianceBilinear dμ_config) : TestFunctionℂ →L[ℂ] TestFunctionℂ := sorry
-
-/-- Glimm-Jaffe's condition: reflection positivity of the covariance operator. -/
-def CovarianceReflectionPositive (dμ_config : ProbabilityMeasure FieldConfiguration) : Prop :=
-  ∀ (F : PositiveTimeTestFunction),
-    0 ≤ (SchwingerFunctionℂ₂ dμ_config (star F.val) F.val).re
-
-/-- The argument of the exponential in Z[F - CF'] expanded according to Glimm-Jaffe.
-
-    CORRECTED: According to Glimm-Jaffe Theorem 6.2.2, we examine Z[F - CF'] where:
-    - F is a positive-time test function
-    - F' = ΘF is the TIME-REFLECTED F (Θ is time reflection, not complex conjugation)
-    - C is the covariance operator
-
-    We have: ⟨F - CF', C(F - CF')⟩ = ⟨F, CF⟩ - ⟨F, C²F'⟩ - ⟨CF', CF⟩ + ⟨CF', C²F'⟩
-
-    This expansion is the heart of Glimm-Jaffe's proof: each term corresponds to
-    a specific part of the 2-point function, and reflection positivity controls the sign. -/
-def glimm_jaffe_exponent (dμ_config : ProbabilityMeasure FieldConfiguration)
-  (C : TestFunctionℂ →L[ℂ] TestFunctionℂ) (F : PositiveTimeTestFunction) : ℂ :=
-  let F_refl := QFT.compTimeReflection F.val  -- F' = ΘF (TIME-REFLECTED F, not complex conjugation!)
-  let CF_refl := C F_refl               -- CF'
-  -- Expand ⟨F - CF', C(F - CF')⟩ using bilinearity of the 2-point function
-  SchwingerFunctionℂ₂ dμ_config F.val F.val -
-  SchwingerFunctionℂ₂ dμ_config F.val CF_refl -
-  SchwingerFunctionℂ₂ dμ_config CF_refl F.val +
-  SchwingerFunctionℂ₂ dμ_config CF_refl CF_refl
-
-/-- The generating functional evaluated at F - CF' according to Glimm-Jaffe's approach.
-    Z[F - CF'] = exp(-½ ⟨F - CF', C(F - CF')⟩) where F' = ΘF is time-reflected F -/
-def glimm_jaffe_reflection_functional (dμ_config : ProbabilityMeasure FieldConfiguration)
-  (C : TestFunctionℂ →L[ℂ] TestFunctionℂ) (F : PositiveTimeTestFunction) : ℂ :=
-  Complex.exp (-(1/2 : ℂ) * glimm_jaffe_exponent dμ_config C F)
-
-/-- Glimm-Jaffe's key insight: The expanded exponent has a specific structure that
-    ensures reflection positivity when the covariance satisfies the right conditions.
-
-    The technical condition is that Re⟨F̄ - CF', C(F̄ - CF')⟩ ≥ 0 for positive-time F. -/
-lemma glimm_jaffe_exponent_reflection_positive
-  (dμ_config : ProbabilityMeasure FieldConfiguration)
-  (h_reflection_positive : CovarianceReflectionPositive dμ_config)
-  (C : TestFunctionℂ →L[ℂ] TestFunctionℂ)
-  (F : PositiveTimeTestFunction) :
-  0 ≤ (glimm_jaffe_exponent dμ_config C F).re := by
-  -- The proof requires showing that the specific 4-term expansion
-  -- results in a non-negative real part when C satisfies reflection positivity
-  sorry
-
-/-- Auxiliary lemma: diagonal values of the complex covariance are real for RP (Hermitian) kernels.
-    Proof sketch: use hermitian symmetry S(f,g) = conj S(g,f) and set g = f. -/
-lemma diagonal_covariance_is_real
-  (dμ_config : ProbabilityMeasure FieldConfiguration)
-  (h_reflection_positive : CovarianceReflectionPositive dμ_config) :
-  ∀ h : TestFunctionℂ, ∃ r : ℝ, SchwingerFunctionℂ₂ dμ_config h h = (r : ℂ) := by
-  -- Diagonal values of the complex covariance are real for RP (Hermitian) kernels.
-  -- Proof sketch: use hermitian symmetry S(f,g) = conj S(g,f) and set g = f.
-  -- Details omitted.
-  intro h; sorry
-
-lemma diagonal_covariance_is_real_GFF (m : ℝ) [Fact (0 < m)] :
-  ∀ h : TestFunctionℂ, ∃ r : ℝ,
-    SchwingerFunctionℂ₂ (gaussianFreeField_free m) h h = (r : ℂ) := by
-  intro h
-  -- identify Schwinger 2-pt with free covariance
-  have hid : SchwingerFunctionℂ₂ (gaussianFreeField_free m) h h = freeCovarianceℂ m h h :=
-    gff_two_point_equals_covarianceℂ_free m h h
-  -- diagonal of free covariance is real
-  rcases freeCovarianceℂ_diagonal_real m h with ⟨r, hr⟩
-  refine ⟨r, ?_⟩
-  -- conclude by rewriting
-  simpa [hid] using hr
-
-/-- Gaussian measures satisfy reflection positivity (OS3) using Glimm-Jaffe Theorem 6.2.2.
-
-    **Strategy (Following Glimm-Jaffe):**
-    For Gaussian measures Z[h] = exp(-½⟨h, Ch⟩), the reflection positivity matrix
-    M_{ij} = Z[f_i - θf_j] can be factored as:
-
-    M_{ij} = Z[f_i] Z[f_j] · exp(⟨θf_i, Cf_j⟩)
-
-    Since individual Gaussian functionals Z[f_i] are positive, it suffices to show
-    that N_{ij} = exp(R_{ij}) is positive semidefinite, where R_{ij} = ⟨θf_i, Cf_j⟩.
-
-    This follows from:
-    1. R_{ij} is positive semidefinite (reflection positivity assumption)
-    2. The exponential of a positive semidefinite matrix is positive semidefinite
-    3. The power series exp(R) = ∑ R^n/n! preserves positivity via Schur product theorem -/
-theorem gaussian_satisfies_OS3_matrix
-  (dμ_config : ProbabilityMeasure FieldConfiguration)
-  (h_gaussian : isGaussianGJ dμ_config)
-  (h_reflection_positive : CovarianceReflectionPositive dμ_config)
-  : OS3_ReflectionPositivity dμ_config := by
-  -- Fix a finite family of positive-time test functions and coefficients
-  intro n f c
-  classical
-
-  -- Define the reflection matrix M_{ij} = Z[f_i - θf_j]
-  let M : Matrix (Fin n) (Fin n) ℂ := fun i j =>
-    GJGeneratingFunctionalℂ dμ_config ((f i).val - QFT.compTimeReflection (f j).val)
-
-  -- Our goal is to show ∑_{ij} c̄_i c_j M_{ij} has non-negative real part
-  suffices h_matrix_positive :
-    0 ≤ (∑ i, ∑ j, (starRingEnd ℂ) (c i) * c j * M i j).re by
-    simpa [M] using h_matrix_positive
-
-  -- Step 1: Factor M_{ij} using Gaussian form
-  -- For Gaussian Z[h] = exp(-½⟨h, Ch⟩), we have the factorization:
-  -- Z[f_i - θf_j] = Z[f_i] Z[f_j] exp(⟨f_i, Cθf_j⟩) exp(-½⟨f_i + θf_j, C(f_i + θf_j)⟩ + ½⟨f_i, Cf_i⟩ + ½⟨θf_j, Cθf_j⟩)
-
-  -- For simplicity, we use a direct approach via the Schur product structure
-  -- The key insight is that M_{ij} = N_{ij} where N is built from R_{ij} = ⟨θf_i, Cf_j⟩
-
-  -- Define the covariance matrix R_{ij} = ⟨θf_i, Cf_j⟩ (this should be positive semidefinite)
-  let R : Matrix (Fin n) (Fin n) ℝ := fun i j =>
-    -- This represents the bilinear form ⟨θf_i, Cf_j⟩
-    -- For now, we use the reflection positivity assumption to ensure R is positive semidefinite
-    (SchwingerFunctionℂ₂ dμ_config
-      (QFT.compTimeReflection (f i).val)
-      (f j).val).re
-
-  -- The Gaussian generating functional has the form that allows us to extract the exponential structure
-  -- For the full proof, we would show M_{ij} = (product terms) × exp(R_{ij})
-  -- and apply the Schur product theorem to show exp(R) is positive definite when R is
-
-  -- For now, we use the reflection positivity assumption directly
-  -- The technical details would involve showing that the Gaussian form
-  -- Z[f_i - θf_j] = exp(-½⟨f_i - θf_j, C(f_i - θf_j)⟩)
-  -- can be reorganized to expose the exp(R_{ij}) structure
-
-  -- Use reflection positivity of the covariance directly
-  -- This is where the Schur product theorem would be applied in the complete proof
-  have h_reflection_matrix_pd : Matrix.PosSemidef R := by
-    -- This follows from the reflection positivity assumption
-    -- R_{ij} = Re⟨θf_i, Cf_j⟩ should be positive semidefinite
-    -- The complete proof would extract this from h_reflection_positive
-    sorry
-
-  -- Apply the exponential positivity result using entrywise exponential preservation
-  -- The key insight: Real.exp applied entrywise to a PSD matrix preserves positive semidefiniteness
-  -- This follows directly from our HadamardExp result: entrywiseExp preserves PosSemidef
-  have h_exp_matrix_pd : Matrix.PosSemidef (fun i j => Real.exp (R i j)) := by
-    -- entrywiseExp is exactly (fun i j => Real.exp (R i j))
-    have hconv : (fun i j => Real.exp (R i j)) = Aqft2.entrywiseExp R := by
-      ext i j; simp [Aqft2.entrywiseExp]
-    rw [hconv]
-    rw [Aqft2.entrywiseExp_eq_hadamardSeries]
-    exact Aqft2.posSemidef_entrywiseExp_hadamardSeries_of_posSemidef R h_reflection_matrix_pd
-
-  -- The connection between M and exp(R) would be established here
-  -- This requires showing that the Gaussian form factors appropriately
-  have h_matrix_connection : ∀ i j,
-    (M i j).re = (GJGeneratingFunctionalℂ dμ_config (f i).val).re *
-                 (GJGeneratingFunctionalℂ dμ_config (f j).val).re *
-                 Real.exp (R i j) := by
-    -- This is the key factorization from Glimm-Jaffe
-    -- Z[f_i - θf_j] factors into individual Gaussian terms times exp(covariance term)
-    sorry
-
-  -- Conclude positivity from the factorization and Schur product result
-  sorry
-
 /-! ## OS4: Clustering for Gaussian Measures
 
 For Gaussian measures, clustering follows from the decay properties of the covariance
@@ -615,3 +425,39 @@ satisfy all the OS axioms under appropriate assumptions on the covariance. The G
 approach for OS3 provides the mathematical foundation for reflection positivity in the
 Gaussian Free Field context.
 -/
+
+/-! ## Completing OS0 for Gaussian Free Field
+
+To complete the `gaussian_satisfies_OS0` proof, we need to establish the required
+assumptions for the Gaussian Free Field constructed in `GFFexplicit.lean`.
+-/
+
+/-- For the Gaussian Free Field measure, the product of two complex pairings with test functions
+    is integrable. Standard: Gaussian measures have finite moments of all orders. -/
+lemma gaussian_pairing_product_integrable_free
+  (m : ℝ) [Fact (0 < m)] (φ ψ : TestFunctionℂ) :
+  Integrable (fun ω => distributionPairingℂ_real ω φ * distributionPairingℂ_real ω ψ)
+    (gaussianFreeField_free m).toMeasure := by
+  -- Reuse the core lemma from the Minlos construction file.
+  simpa using gaussian_pairing_product_integrable_free_core m φ ψ
+
+/-- The complex covariance of the Gaussian Free Field is bilinear.
+    Proven via integrability and linearity of the pairing under the integral. -/
+theorem covarianceBilinear_gaussianFreeField (m : ℝ) [Fact (0 < m)] :
+  CovarianceBilinear (gaussianFreeField_free m) := by
+  -- Apply the general bilinearity-from-integrability lemma
+  refine CovarianceBilinear_of_integrable (dμ_config := gaussianFreeField_free m) ?hint
+  intro φ ψ
+  simpa using gaussian_pairing_product_integrable_free m φ ψ
+
+/-! ## OS0: Analyticity for Gaussian Free Field
+
+The Gaussian Free Field satisfies OS0 due to the combination of Gaussian structure,
+bilinearity, and continuity of the covariance.
+-/
+
+theorem gaussianFreeField_satisfies_OS0 (m : ℝ) [Fact (0 < m)] :
+  OS0_Analyticity (gaussianFreeField_free m) := by
+  exact gaussian_satisfies_OS0 (gaussianFreeField_free m)
+    (isGaussianGJ_gaussianFreeField_free m)
+    (covarianceBilinear_gaussianFreeField m)

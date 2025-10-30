@@ -68,7 +68,7 @@ For bounded φ : α → ℝ, define T_φ : L²(α,μ) → L²(α,μ) by:
 
 **Proof Strategy:** Pointwise bound → L² bound → LinearMap.mkContinuous
 **Status:** Framework complete, core proofs marked with `sorry`
-**Integration:** Used in `QFTHilbertSpace`, `GFFconstruct`, `HilbertSpace` modules
+**Integration:** Used in `QFTHilbertSpace`, `GFFMconstruct`, `HilbertSpace` modules
 
 Foundation for rigorous field operator construction in Osterwalder-Schrader framework.
 -/

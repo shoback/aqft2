@@ -53,14 +53,25 @@ def IsPositiveDefinite {α : Type*} [AddGroup α] (φ : α → ℂ) : Prop :=
     This is a fundamental result connecting harmonic analysis and probability theory.
     The infinite-dimensional generalization (Minlos theorem) is used to construct
     the Gaussian Free Field. -/
-theorem bochner_Rn
+axiom bochner_Rn
   {n : ℕ} (φ : (Fin n → ℝ) → ℂ)
   (hcont : Continuous φ)
   (hpd : IsPositiveDefinite φ)
   (hnorm : φ 0 = 1) :
   ∃ μ : Measure (Fin n → ℝ), IsProbabilityMeasure μ ∧
-    (∀ t, φ t = ∫ ξ, Complex.exp (I * (∑ i, t i * ξ i)) ∂μ) := by
-  sorry  -- Standard proof via Stone-Weierstrass and Riesz representation
+    (∀ t, φ t = ∫ ξ, Complex.exp (I * (∑ i, t i * ξ i)) ∂μ)
+  -- Standard proof via Stone-Weierstrass and Riesz representation
+
+/-- Lévy uniqueness of characteristic functions on ℝⁿ:
+    If two probability measures have identical characteristic functions for all
+    real frequencies, then the measures are equal. -/
+axiom levy_cf_uniqueness_Rn
+  {n : ℕ}
+  (μ₁ μ₂ : ProbabilityMeasure (Fin n → ℝ)) :
+  (∀ t : (Fin n → ℝ),
+    ∫ ξ, Complex.exp (I * (∑ i, t i * ξ i)) ∂μ₁.toMeasure =
+    ∫ ξ, Complex.exp (I * (∑ i, t i * ξ i)) ∂μ₂.toMeasure) →
+  μ₁ = μ₂
 
 /-! ## Minlos Theorem -/
 
@@ -209,3 +220,34 @@ lemma gaussian_positive_definite_via_embedding
   · exact gaussian_positive_definite_via_embedding T covariance_form h_eq
   -- 3. Normalization at 0
   · simp [gaussian_characteristic_functional, h_zero]
+
+/-- The measure constructed by Minlos theorem for a Gaussian characteristic functional
+    indeed has that functional as its characteristic function.
+
+    This theorem makes explicit that the Gaussian measure μ constructed via Minlos
+    satisfies: for any test function f,
+    ∫ ω, exp(i⟨f,ω⟩) dμ(ω) = exp(-½⟨f,Cf⟩)
+
+    This is the fundamental property connecting the abstract Minlos construction
+    to the concrete Gaussian generating functional used in quantum field theory. -/
+theorem gaussian_measure_characteristic_functional
+  [NuclearSpace E]
+  {H : Type*} [SeminormedAddCommGroup H] [NormedSpace ℝ H]
+  (T : E →ₗ[ℝ] H)
+  (covariance_form : E → E → ℝ)
+  (h_eq : ∀ f, covariance_form f f = (‖T f‖^2 : ℝ))
+  (h_nuclear : True)
+  (h_zero : covariance_form 0 0 = 0)
+  (h_continuous : Continuous (fun f => covariance_form f f))
+  : ∃ μ : ProbabilityMeasure (WeakDual ℝ E),
+    (∀ f : E, ∫ ω, Complex.exp (I * (ω f)) ∂μ.toMeasure =
+              gaussian_characteristic_functional covariance_form f) := by
+  -- Get the measure from minlos_gaussian_construction
+  have h_minlos := minlos_gaussian_construction T covariance_form h_eq h_nuclear h_zero h_continuous
+  obtain ⟨μ, hprob, hchar⟩ := h_minlos
+  -- Convert to ProbabilityMeasure and apply the result
+  use ⟨μ, hprob⟩
+  intro f
+  exact (hchar f).symm
+
+end

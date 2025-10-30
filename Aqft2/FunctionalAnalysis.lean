@@ -219,20 +219,7 @@ lemma SchwartzMap.hasTemperateGrowth_general
     simpa using hC x
   simpa using this
 
--- Original version for ℂ-normed spaces (kept for compatibility)
-lemma SchwartzMap.hasTemperateGrowth
-    {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
-    (g : 𝓢(E, V)) :
-    Function.HasTemperateGrowth (⇑g) := by
-  refine ⟨g.smooth', ?_⟩
-  intro n
-  -- take k = 0 in the decay estimate
-  rcases g.decay' 0 n with ⟨C, hC⟩
-  refine ⟨0, C, ?_⟩
-  intro x
-  have : ‖x‖ ^ 0 * ‖iteratedFDeriv ℝ n g x‖ ≤ C := by
-    simpa using hC x
-  simpa using this
+-- Note: SchwartzMap.hasTemperateGrowth is now provided by mathlib
 
 /- Measure lifting from real to complex Lp spaces -/
 

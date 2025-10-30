@@ -67,32 +67,6 @@ open TopologicalSpace Measure SCV QFT
 -- Open DFunLike for SchwartzMap function application (from Basic.lean)
 open DFunLike (coe)
 
--- Auxiliary alias for the real time-reflection linear map coming from `DiscreteSymmetry`.
-@[simp] private noncomputable def compTimeReflectionReal_map : TestFunction →L[ℝ] TestFunction :=
-  by
-    classical
-    have hg_upper : ∃ (k : ℕ) (C : ℝ), ∀ x : SpaceTime, ‖x‖ ≤ C * (1 + ‖QFT.timeReflectionCLM x‖) ^ k := by
-      refine ⟨1, 1, ?_⟩
-      intro x
-      have h_iso : ‖QFT.timeReflectionCLM x‖ = ‖x‖ := by
-        have h_norm_preserved : ‖QFT.timeReflection x‖ = ‖x‖ :=
-          LinearIsometryEquiv.norm_map QFT.timeReflectionLE x
-        simpa [QFT.timeReflectionCLM] using h_norm_preserved
-      have h_bound : ‖x‖ ≤ 1 * (1 + ‖QFT.timeReflectionCLM x‖) := by
-        have h0 : ‖x‖ ≤ ‖x‖ + 1 := le_add_of_nonneg_right (show 0 ≤ (1 : ℝ) by exact zero_le_one)
-        have h₁ : ‖x‖ ≤ 1 + ‖QFT.timeReflectionCLM x‖ := by
-          calc
-            ‖x‖ ≤ ‖x‖ + 1 := h0
-            _ = 1 + ‖x‖ := by ring
-            _ = 1 + ‖QFT.timeReflectionCLM x‖ := by simp [h_iso]
-        calc
-          ‖x‖ ≤ 1 + ‖QFT.timeReflectionCLM x‖ := h₁
-          _ = 1 * (1 + ‖QFT.timeReflectionCLM x‖) := by simp
-      simpa [pow_one] using h_bound
-    exact SchwartzMap.compCLM (𝕜 := ℝ)
-      (hg := QFT.timeReflectionCLM.hasTemperateGrowth)
-      (hg_upper := hg_upper)
-
 -- TODO: Fix import issue with Basic.lean definitions
 -- The FieldConfiguration and GJ* definitions should be accessible but aren't currently
 
@@ -135,7 +109,38 @@ def OS2_EuclideanInvariance (dμ_config : ProbabilityMeasure FieldConfiguration)
     GJGeneratingFunctionalℂ dμ_config f =
     GJGeneratingFunctionalℂ dμ_config (QFT.euclidean_action g f)
 
+/-- OS3 (Simplified Reflection Positivity): Standard formulation (needs clarification).
 
+    WARNING: This formulation is not obviously correct and needs more careful analysis.
+    The proper Glimm-Jaffe formulation involves L2 expectations of exponentials of
+    the form exp(-½⟨F - CF', C(F - CF')⟩) where C is the covariance operator.
+
+    The matrix formulation below is more reliable and follows Glimm-Jaffe directly.
+    TODO: Reformulate this properly using the L2 framework. -/
+def OS3_SimplifiedReflectionPositivity (dμ_config : ProbabilityMeasure FieldConfiguration) : Prop :=
+  ∀ (F : PositiveTimeTestFunction),
+    let F_complex := toComplex F.val  -- Convert to complex
+    let F_time_reflected := QFT.compTimeReflection F_complex  -- ΘF (time reflection)
+    let test_function := schwartzMul (star F_complex) F_time_reflected  -- F̄(ΘF)
+    0 ≤ (GJGeneratingFunctionalℂ dμ_config test_function).re ∧
+        (GJGeneratingFunctionalℂ dμ_config test_function).im = 0
+
+/-- OS3 (Reflection Positivity, Matrix Formulation): The reflection positivity matrix is positive semidefinite.
+
+    This is the alternative formulation from Glimm-Jaffe where reflection positivity
+    is expressed as: for any finite collection of positive-time test functions f₁,...,fₙ,
+    the matrix M_{i,j} = Z[fᵢ - Θfⱼ] is positive semidefinite.
+
+    This means: ∑ᵢⱼ c̄ᵢcⱼ Z[fᵢ - Θfⱼ] ≥ 0 for all complex coefficients cᵢ. -/
+def OS3_ReflectionPositivity (dμ_config : ProbabilityMeasure FieldConfiguration) : Prop :=
+  ∀ (n : ℕ) (f : Fin n → PositiveTimeTestFunction) (c : Fin n → ℂ),
+    let reflection_matrix := fun i j =>
+      let fj_complex := toComplex (f j).val  -- Convert to complex
+      let fj_time_reflected := QFT.compTimeReflection fj_complex  -- Θfⱼ
+      let fi_complex := toComplex (f i).val  -- Convert to complex
+      let test_function := fi_complex - fj_time_reflected  -- fᵢ - Θfⱼ
+      GJGeneratingFunctionalℂ dμ_config test_function
+    0 ≤ (∑ i, ∑ j, (starRingEnd ℂ) (c i) * c j * reflection_matrix i j).re
 
 /-- Real formulation of OS3 reflection positivity using the real-valued positive time
     subspace and the real generating functional. This version avoids explicit complex
@@ -145,7 +150,7 @@ def OS3_ReflectionPositivity_real (dμ_config : ProbabilityMeasure FieldConfigur
   ∀ (n : ℕ) (f : Fin n → PositiveTimeTestFunction) (c : Fin n → ℝ),
     let reflection_matrix := fun i j : Fin n =>
       GJGeneratingFunctional dμ_config
-        ((f i).val - compTimeReflectionReal_map ((f j).val))
+        ((f i).val - QFT.compTimeReflectionReal ((f j).val))
     0 ≤ ∑ i, ∑ j, c i * c j * (reflection_matrix i j).re
 
 /-- OS3 Reflection Invariance: The generating functional is invariant under time reflection.
@@ -186,11 +191,7 @@ def OS4_Clustering (dμ_config : ProbabilityMeasure FieldConfiguration) : Prop :
     ‖GJGeneratingFunctionalℂ dμ_config (schwartzMul f (translate_test_function_complex sep g)) -
      GJGeneratingFunctionalℂ dμ_config f * GJGeneratingFunctionalℂ dμ_config g‖ < ε
   where
-    /-- Placeholder: spatial translation acting on complex test functions.
-        The full construction should compose `f` with the spatial translation map.
-        For now we keep the identity map so the definition typechecks and downstream
-        development can proceed. -/
-  translate_test_function_complex (_sep : ℝ) (f : TestFunctionℂ) : TestFunctionℂ := f
+    translate_test_function_complex (sep : ℝ) (f : TestFunctionℂ) : TestFunctionℂ := sorry
 
 /-! ## Matrix Formulation of OS3
 
